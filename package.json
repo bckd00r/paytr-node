@@ -1,6 +1,6 @@
 {
-    "name": "@baris.gktp/paytr",
-    "version": "1.0.0",
+    "name": "paytr.js",
+    "version": "0.0.1",
     "description": "PayTR Payment Gateway - Modular Node.js/TypeScript SDK",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

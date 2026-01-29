@@ -5,17 +5,17 @@ PayTR ödeme geçidi için modüler Node.js/TypeScript SDK.
 ## Kurulum
 
 ```bash
-npm install @baris.gktp/paytr
+npm install paytr.js
 # veya
-yarn add @baris.gktp/paytr
+yarn add paytr.js
 # veya
-pnpm add @baris.gktp/paytr
+pnpm add paytr.js
 ```
 
 ## ⚙️ Yapılandırma
 
 ```typescript
-import { PayTR } from '@baris.gktp/paytr';
+import { PayTR } from 'paytr.js';
 
 const paytr = new PayTR({
   merchantId: 'MAGAZA_NO',
@@ -218,7 +218,7 @@ if (result.status === 'success') {
 
 ```typescript
 // app/api/payment/route.ts
-import { PayTR } from '@baris.gktp/paytr';
+import { PayTR } from 'paytr.js';
 
 const paytr = new PayTR({
   merchantId: process.env.PAYTR_MERCHANT_ID!,
@@ -249,7 +249,7 @@ export async function POST(request: Request) {
 
 ```typescript
 // server/api/payment.post.ts
-import { PayTR } from '@baris.gktp/paytr';
+import { PayTR } from 'paytr.js';
 
 const paytr = new PayTR({
   merchantId: process.env.PAYTR_MERCHANT_ID!,
