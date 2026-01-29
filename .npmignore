@@ -1,0 +1,21 @@
+# Source files
+src/
+
+# TypeScript config
+tsconfig.json
+tsconfig.esm.json
+
+# Test files
+test.js
+
+# Development files
+.git
+.gitignore
+.DS_Store
+node_modules/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo

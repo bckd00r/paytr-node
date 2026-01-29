@@ -1,0 +1,42 @@
+{
+    "name": "paytr-node",
+    "version": "1.0.0",
+    "description": "PayTR Payment Gateway - Modular Node.js/TypeScript SDK",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "clean": "rm -rf dist",
+        "prepublishOnly": "npm run clean && npm run build"
+    },
+    "keywords": [
+        "paytr",
+        "payment",
+        "gateway",
+        "turkey",
+        "turkiye",
+        "odeme",
+        "kredi-karti",
+        "credit-card",
+        "3d-secure"
+    ],
+    "author": "",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^25.1.0",
+        "typescript": "^5.3.0"
+    }
+}
