@@ -1,11 +1,10 @@
 # PayTR Node.js SDK
 
-PayTR ödeme geçidi için modüler Node.js/TypeScript SDK. React, Nuxt, Next.js ve Vue backend'lerinde kullanılabilir.
+PayTR ödeme geçidi için modüler Node.js/TypeScript SDK.
 
-## 🚀 Kurulum
+## Kurulum
 
 ```bash
-npm install paytr-node
 # veya
 yarn add paytr-node
 # veya
