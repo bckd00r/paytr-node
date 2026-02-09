@@ -30,6 +30,20 @@ export const ENDPOINTS = {
   
   /** Taksit oranları */
   INSTALLMENT_RATES: `${PAYTR_BASE_URL}/odeme/taksit-oranlari`,
+  
+  // Platform Transfer (Marketplace)
+  /** Platform transfer */
+  PLATFORM_TRANSFER: `${PAYTR_BASE_URL}/odeme/platform/transfer`,
+  /** Geri dönen ödemeler listesi */
+  RETURNED_PAYMENTS: `${PAYTR_BASE_URL}/odeme/geri-donen-transfer`,
+  /** Hesaptan gönder */
+  SEND_FROM_ACCOUNT: `${PAYTR_BASE_URL}/odeme/hesaptan-gonder`,
+  
+  // Payment Reports
+  /** Ödeme dökümü */
+  PAYMENT_SUMMARY: `${PAYTR_BASE_URL}/rapor/odeme-dokumu`,
+  /** Ödeme detayı */
+  PAYMENT_DETAIL: `${PAYTR_BASE_URL}/rapor/odeme-detayi`,
 } as const;
 
 /** Varsayılan değerler */

@@ -126,3 +126,16 @@ export function formatDate(date: Date): string {
 export function boolToString(value: boolean | undefined): string {
   return value ? '1' : '0';
 }
+
+/**
+ * HMAC SHA256 hash oluşturur (callback doğrulama için)
+ * @param data - Hash'lenecek veri
+ * @param merchantKey - Mağaza API anahtarı
+ * @returns Base64 encoded hash
+ */
+export function createHash(data: string, merchantKey: string): string {
+  return crypto
+    .createHmac('sha256', merchantKey)
+    .update(data)
+    .digest('base64');
+}

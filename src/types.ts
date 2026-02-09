@@ -595,3 +595,122 @@ export function getErrorDescription(
   return (map as Record<string, string>)[errorCode] ?? `Bilinmeyen hata kodu: ${errorCode}`;
 }
 
+// ============================================================================
+// Platform Transfer Types (Marketplace)
+// ============================================================================
+
+/**
+ * Platform transfer parametreleri
+ * 
+ * @description Marketplace modelinde alt mağazalara ödeme transferi
+ */
+export interface PlatformTransferParams {
+  /** Sipariş numarası */
+  merchantOid: string;
+  /** İşlem ID */
+  transId: string;
+  /** Alt mağaza tutarı (kuruş cinsinden) */
+  submerchantAmount: number;
+  /** Toplam tutar (kuruş cinsinden) */
+  totalAmount: number;
+  /** Transfer alıcı adı */
+  transferName: string;
+  /** Transfer IBAN */
+  transferIban: string;
+}
+
+/**
+ * Platform transfer sonucu
+ */
+export interface PlatformTransferResult {
+  status: 'success' | 'failed';
+  err_msg?: string;
+  err_no?: string;
+}
+
+/**
+ * Geri dönen ödeme transfer bilgisi
+ */
+export interface ReturnedPaymentTransfer {
+  /** Transfer ID */
+  trans_id: string;
+  /** Alt mağaza tutarı */
+  submerchant_amount: number;
+  /** Transfer adı */
+  transfer_name: string;
+  /** Transfer IBAN */
+  transfer_iban: string;
+}
+
+/**
+ * Geri dönen ödemeler listesi sonucu
+ */
+export interface ReturnedPaymentsResult {
+  status: 'success' | 'failed';
+  err_msg?: string;
+  /** Geri dönen ödemeler listesi */
+  data?: Array<{
+    trans_id: string;
+    merchant_oid: string;
+    amount: number;
+    return_date: string;
+    return_reason: string;
+  }>;
+}
+
+/**
+ * Platform transfer callback parametreleri
+ */
+export interface PlatformTransferCallback {
+  /** Transfer modü */
+  mode?: 'cashout' | 'transfer';
+  /** Transfer ID */
+  trans_id?: string;
+  /** İşlem sonucu */
+  processed_result?: string;
+  /** Transfer ID listesi */
+  trans_ids?: string[];
+  /** Doğrulama hash'i */
+  hash: string;
+}
+
+// ============================================================================
+// Payment Report Types
+// ============================================================================
+
+/**
+ * Ödeme rapor özeti sonucu
+ */
+export interface PaymentSummaryResult {
+  status: 'success' | 'failed';
+  err_msg?: string;
+  /** Toplam ödeme adedi */
+  total_count?: number;
+  /** Toplam başarılı ödeme adedi */
+  success_count?: number;
+  /** Toplam başarısız ödeme adedi */
+  failed_count?: number;
+  /** Toplam tutar (kuruş) */
+  total_amount?: number;
+  /** Ham veri */
+  data?: unknown;
+}
+
+/**
+ * Ödeme detayı sonucu
+ */
+export interface PaymentDetailResult {
+  status: 'success' | 'failed';
+  err_msg?: string;
+  /** Ödeme detayları listesi */
+  data?: Array<{
+    merchant_oid: string;
+    payment_amount: number;
+    payment_status: string;
+    payment_date: string;
+    payment_type: string;
+    installment_count: number;
+    currency: string;
+  }>;
+}
+

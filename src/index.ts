@@ -37,6 +37,7 @@ import {
   formatDate,
   boolToString,
   generateRequestId,
+  createHash,
 } from './utils';
 import type {
   PayTRConfig,
@@ -55,6 +56,15 @@ import type {
   InstallmentRatesResult,
   DirectPaymentResult,
   CardInfo,
+  // Platform Transfer
+  PlatformTransferParams,
+  PlatformTransferResult,
+  ReturnedPaymentsResult,
+  ReturnedPaymentTransfer,
+  PlatformTransferCallback,
+  // Payment Reports
+  PaymentSummaryResult,
+  PaymentDetailResult,
 } from './types';
 import { PayTRError } from './types';
 
@@ -629,6 +639,287 @@ export class PayTR {
         status: 'error',
         errMsg: error instanceof Error ? error.message : 'Bilinmeyen hata',
       };
+    }
+  }
+
+  // ==========================================================================
+  // Platform Transfer Methods (Marketplace)
+  // ==========================================================================
+
+  /**
+   * Platform transfer işlemi yapar (Marketplace)
+   * 
+   * @param params - Transfer parametreleri
+   * @returns Transfer sonucu
+   * 
+   * @example
+   * ```typescript
+   * const result = await paytr.platformTransfer({
+   *   merchantOid: 'ORDER-123',
+   *   transId: 'TRANS-456',
+   *   submerchantAmount: 8000, // 80.00 TL
+   *   totalAmount: 10000,      // 100.00 TL
+   *   transferName: 'Alt Mağaza',
+   *   transferIban: 'TR123456789012345678901234',
+   * });
+   * ```
+   */
+  async platformTransfer(params: PlatformTransferParams): Promise<PlatformTransferResult> {
+    // Token oluştur
+    const hashStr = 
+      this.config.merchantId + 
+      params.merchantOid + 
+      params.transId +
+      params.submerchantAmount.toString() + 
+      params.totalAmount.toString() + 
+      params.transferName + 
+      params.transferIban + 
+      this.config.merchantSalt;
+    
+    const paytrToken = generateToken(this.config.merchantKey, hashStr);
+    
+    try {
+      const response = await fetch(ENDPOINTS.PLATFORM_TRANSFER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          merchant_id: this.config.merchantId,
+          merchant_oid: params.merchantOid,
+          trans_id: params.transId,
+          submerchant_amount: params.submerchantAmount.toString(),
+          total_amount: params.totalAmount.toString(),
+          transfer_name: params.transferName,
+          transfer_iban: params.transferIban,
+          paytr_token: paytrToken,
+        }),
+      });
+
+      const data = await response.json();
+      return data as PlatformTransferResult;
+    } catch (error) {
+      throw new PayTRError(
+        error instanceof Error ? error.message : 'Platform transfer hatası',
+        'PLATFORM_TRANSFER_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Geri dönen ödemeleri listeler
+   * 
+   * @param startDate - Başlangıç tarihi
+   * @param endDate - Bitiş tarihi
+   * @returns Geri dönen ödemeler listesi
+   * 
+   * @example
+   * ```typescript
+   * const start = new Date('2024-01-01');
+   * const end = new Date('2024-01-31');
+   * const result = await paytr.getReturnedPayments(start, end);
+   * ```
+   */
+  async getReturnedPayments(startDate: Date, endDate: Date): Promise<ReturnedPaymentsResult> {
+    const formattedStart = formatDate(startDate);
+    const formattedEnd = formatDate(endDate);
+    
+    // Token oluştur
+    const hashStr = this.config.merchantId + formattedStart + formattedEnd + this.config.merchantSalt;
+    const paytrToken = generateToken(this.config.merchantKey, hashStr);
+    
+    try {
+      const response = await fetch(ENDPOINTS.RETURNED_PAYMENTS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          merchant_id: this.config.merchantId,
+          start_date: formattedStart,
+          end_date: formattedEnd,
+          paytr_token: paytrToken,
+        }),
+      });
+
+      const data = await response.json();
+      return data as ReturnedPaymentsResult;
+    } catch (error) {
+      throw new PayTRError(
+        error instanceof Error ? error.message : 'Geri dönen ödemeler listesi hatası',
+        'RETURNED_PAYMENTS_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Geri dönen ödemeyi transfer eder
+   * 
+   * @param transId - Transfer ID
+   * @param transfers - Transfer bilgileri listesi
+   * @returns İşlem sonucu
+   * 
+   * @example
+   * ```typescript
+   * const result = await paytr.sendReturnedPayment('TRANS-123', [
+   *   {
+   *     trans_id: 'SUB-1',
+   *     submerchant_amount: 5000,
+   *     transfer_name: 'Alt Mağaza',
+   *     transfer_iban: 'TR123456789012345678901234',
+   *   }
+   * ]);
+   * ```
+   */
+  async sendReturnedPayment(
+    transId: string, 
+    transfers: ReturnedPaymentTransfer[]
+  ): Promise<PlatformTransferResult> {
+    // Token oluştur
+    const hashStr = this.config.merchantId + transId + this.config.merchantSalt;
+    const paytrToken = generateToken(this.config.merchantKey, hashStr);
+    
+    try {
+      const response = await fetch(ENDPOINTS.SEND_FROM_ACCOUNT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          merchant_id: this.config.merchantId,
+          trans_id: transId,
+          trans_info: JSON.stringify(transfers),
+          paytr_token: paytrToken,
+        }),
+      });
+
+      const data = await response.json();
+      return data as PlatformTransferResult;
+    } catch (error) {
+      throw new PayTRError(
+        error instanceof Error ? error.message : 'Geri dönen ödeme transfer hatası',
+        'SEND_RETURNED_PAYMENT_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Platform transfer callback'ini doğrular
+   * 
+   * @param callback - PayTR'dan gelen callback verisi
+   * @returns Doğrulama başarılı mı?
+   * 
+   * @example
+   * ```typescript
+   * app.post('/api/platform-callback', (req, res) => {
+   *   const isValid = paytr.verifyPlatformTransferCallback(req.body);
+   *   if (!isValid) {
+   *     return res.status(400).send('Invalid hash');
+   *   }
+   *   // İşlemi onayla
+   *   res.send('OK');
+   * });
+   * ```
+   */
+  verifyPlatformTransferCallback(callback: PlatformTransferCallback): boolean {
+    let hashStr: string;
+    
+    if (callback.mode === 'cashout') {
+      // Geri dönen ödemeler geri bildirimi
+      hashStr = (callback.trans_id || '') + (callback.processed_result || '') + this.config.merchantSalt;
+    } else {
+      // Normal platform transfer geri bildirimi
+      hashStr = JSON.stringify(callback.trans_ids || []) + this.config.merchantSalt;
+    }
+    
+    const calculatedHash = generateToken(this.config.merchantKey, hashStr);
+    return calculatedHash === callback.hash;
+  }
+
+  // ==========================================================================
+  // Payment Report Methods
+  // ==========================================================================
+
+  /**
+   * Ödeme özeti raporunu getirir
+   * 
+   * @param startDate - Başlangıç tarihi
+   * @param endDate - Bitiş tarihi
+   * @returns Ödeme özeti
+   * 
+   * @example
+   * ```typescript
+   * const start = new Date('2024-01-01');
+   * const end = new Date('2024-01-31');
+   * const result = await paytr.getPaymentSummary(start, end);
+   * console.log('Toplam:', result.total_amount);
+   * ```
+   */
+  async getPaymentSummary(startDate: Date, endDate: Date): Promise<PaymentSummaryResult> {
+    // YYYY-MM-DD formatı
+    const formattedStart = startDate.toISOString().split('T')[0];
+    const formattedEnd = endDate.toISOString().split('T')[0];
+    
+    // Token oluştur
+    const hashStr = this.config.merchantId + formattedStart + formattedEnd + this.config.merchantSalt;
+    const paytrToken = generateToken(this.config.merchantKey, hashStr);
+    
+    try {
+      const response = await fetch(ENDPOINTS.PAYMENT_SUMMARY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          merchant_id: this.config.merchantId,
+          start_date: formattedStart,
+          end_date: formattedEnd,
+          paytr_token: paytrToken,
+        }),
+      });
+
+      const data = await response.json();
+      return data as PaymentSummaryResult;
+    } catch (error) {
+      throw new PayTRError(
+        error instanceof Error ? error.message : 'Ödeme özeti hatası',
+        'PAYMENT_SUMMARY_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Belirli bir günün ödeme detaylarını getirir
+   * 
+   * @param date - Tarih
+   * @returns Ödeme detayları
+   * 
+   * @example
+   * ```typescript
+   * const result = await paytr.getPaymentDetail(new Date('2024-01-15'));
+   * result.data?.forEach(payment => {
+   *   console.log(payment.merchant_oid, payment.payment_amount);
+   * });
+   * ```
+   */
+  async getPaymentDetail(date: Date): Promise<PaymentDetailResult> {
+    // YYYY-MM-DD formatı
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    // Token oluştur
+    const hashStr = this.config.merchantId + formattedDate + this.config.merchantSalt;
+    const paytrToken = generateToken(this.config.merchantKey, hashStr);
+    
+    try {
+      const response = await fetch(ENDPOINTS.PAYMENT_DETAIL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          merchant_id: this.config.merchantId,
+          date: formattedDate,
+          paytr_token: paytrToken,
+        }),
+      });
+
+      const data = await response.json();
+      return data as PaymentDetailResult;
+    } catch (error) {
+      throw new PayTRError(
+        error instanceof Error ? error.message : 'Ödeme detayı hatası',
+        'PAYMENT_DETAIL_ERROR'
+      );
     }
   }
 }

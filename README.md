@@ -255,6 +255,112 @@ if (result.status === 'success') {
 }
 ```
 
+### Platform Transfer (Marketplace)
+
+#### Transfer İşlemi
+
+```typescript
+// Alt mağazaya ödeme transferi
+const result = await paytr.platformTransfer({
+  merchantOid: 'ORDER-123',
+  transId: 'TRANS-456',
+  submerchantAmount: 8000,  // 80.00 TL (kuruş cinsinden)
+  totalAmount: 10000,       // 100.00 TL (kuruş cinsinden)
+  transferName: 'Alt Mağaza Adı',
+  transferIban: 'TR123456789012345678901234'
+});
+
+if (result.status === 'success') {
+  console.log('Transfer başarılı');
+} else {
+  console.error('Hata:', result.err_msg);
+}
+```
+
+#### Geri Dönen Ödemeler Listesi
+
+```typescript
+const startDate = new Date('2024-01-01');
+const endDate = new Date('2024-01-31');
+
+const result = await paytr.getReturnedPayments(startDate, endDate);
+
+if (result.status === 'success' && result.data) {
+  result.data.forEach(payment => {
+    console.log(`${payment.merchant_oid}: ${payment.amount} - ${payment.return_reason}`);
+  });
+}
+```
+
+#### Geri Dönen Ödemeyi Transfer Et
+
+```typescript
+const result = await paytr.sendReturnedPayment('TRANS-123', [
+  {
+    trans_id: 'SUB-1',
+    submerchant_amount: 5000,
+    transfer_name: 'Alt Mağaza 1',
+    transfer_iban: 'TR123456789012345678901234'
+  },
+  {
+    trans_id: 'SUB-2',
+    submerchant_amount: 3000,
+    transfer_name: 'Alt Mağaza 2',
+    transfer_iban: 'TR987654321098765432109876'
+  }
+]);
+```
+
+#### Platform Transfer Callback Doğrulama
+
+```typescript
+// Express.js / Next.js API Route
+app.post('/api/platform-callback', (req, res) => {
+  const isValid = paytr.verifyPlatformTransferCallback(req.body);
+  
+  if (!isValid) {
+    return res.status(400).send('Invalid hash');
+  }
+  
+  // Transfer işlemini onayla
+  res.send('OK');
+});
+```
+
+### Ödeme Raporları
+
+#### Ödeme Özeti
+
+```typescript
+const startDate = new Date('2024-01-01');
+const endDate = new Date('2024-01-31');
+
+const result = await paytr.getPaymentSummary(startDate, endDate);
+
+if (result.status === 'success') {
+  console.log('Toplam Ödeme:', result.total_count);
+  console.log('Başarılı:', result.success_count);
+  console.log('Başarısız:', result.failed_count);
+  console.log('Toplam Tutar:', result.total_amount);
+}
+```
+
+#### Günlük Ödeme Detayı
+
+```typescript
+const date = new Date('2024-01-15');
+
+const result = await paytr.getPaymentDetail(date);
+
+if (result.status === 'success' && result.data) {
+  result.data.forEach(payment => {
+    console.log(`${payment.merchant_oid}: ${payment.payment_amount} ${payment.currency}`);
+    console.log(`Durum: ${payment.payment_status}`);
+    console.log(`Taksit: ${payment.installment_count}`);
+  });
+}
+```
+
 ## 🔧 Next.js / Nuxt Entegrasyonu
 
 ### Next.js API Route
@@ -327,6 +433,7 @@ export default defineEventHandler(async (event) => {
 | `prepareSaveCardPayment(options)` | Kart saklayarak ödeme formu hazırlar |
 | `prepareStoredCardPayment(options)` | Kayıtlı kart ile ödeme formu hazırlar |
 | `prepareRecurringPayment(options)` | Tekrarlı ödeme formu hazırlar |
+| `processDirectPayment(options)` | Server-side direkt ödeme işlemi yapar |
 | `verifyCallback(callback)` | Ödeme bildirimini doğrular |
 | `queryBIN(binNumber)` | BIN sorgulama yapar |
 | `refund(merchantOid, amount, referenceNo?)` | İade işlemi yapar |
@@ -335,6 +442,12 @@ export default defineEventHandler(async (event) => {
 | `deleteCard(utoken, ctoken)` | Kayıtlı kartı siler |
 | `getOrderStatus(merchantOid)` | Sipariş durumu sorgular |
 | `getInstallmentRates()` | Taksit oranlarını getirir |
+| `platformTransfer(params)` | Platform transfer işlemi yapar (Marketplace) |
+| `getReturnedPayments(startDate, endDate)` | Geri dönen ödemeleri listeler |
+| `sendReturnedPayment(transId, transfers)` | Geri dönen ödemeyi transfer eder |
+| `verifyPlatformTransferCallback(callback)` | Platform transfer callback'ini doğrular |
+| `getPaymentSummary(startDate, endDate)` | Ödeme özeti raporunu getirir |
+| `getPaymentDetail(date)` | Belirli bir günün ödeme detaylarını getirir |
 
 ## 📝 Test Kartı
 
