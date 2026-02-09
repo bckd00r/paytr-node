@@ -53,6 +53,8 @@ import type {
   DeleteCardResult,
   OrderStatusResult,
   InstallmentRatesResult,
+  DirectPaymentResult,
+  CardInfo,
 } from './types';
 import { PayTRError } from './types';
 
@@ -151,6 +153,15 @@ export class PayTR {
       card_type: options.cardType ?? '',
       non3d_test_failed: boolToString(options.non3dTestFailed ?? false),
     };
+
+    // Direct API: Kart bilgileri verilmişse formData'ya ekle
+    if (options.cardInfo) {
+      formData.cc_owner = options.cardInfo.ccOwner;
+      formData.card_number = options.cardInfo.cardNumber;
+      formData.expiry_month = options.cardInfo.expiryMonth;
+      formData.expiry_year = options.cardInfo.expiryYear;
+      formData.cvv = options.cardInfo.cvv;
+    }
 
     return {
       formAction: ENDPOINTS.PAYMENT_FORM,
@@ -504,8 +515,110 @@ export class PayTR {
       err_msg: (response as { err_msg?: string }).err_msg ?? 'Unknown error',
     };
   }
+
+  // ============================================================================
+  // DIRECT API PAYMENT (SERVER-SIDE)
+  // ============================================================================
+
+  /**
+   * Direct API ile server-side ödeme işlemi yapar
+   * 
+   * ⚠️ DİKKAT: Bu metod kart bilgilerini server üzerinden işler.
+   * PCI-DSS uyumluluğu gerektirir!
+   * 
+   * @param options - Ödeme parametreleri (cardInfo zorunlu)
+   * @returns Ödeme sonucu veya 3D yönlendirme bilgisi
+   * 
+   * @example
+   * ```typescript
+   * const result = await paytr.processDirectPayment({
+   *   merchantOid: 'ORDER-123',
+   *   email: 'customer@example.com',
+   *   paymentAmount: 100.99,
+   *   currency: 'TL',
+   *   basketItems: [{ name: 'Ürün', price: 100.99, quantity: 1 }],
+   *   user: { name: 'Ad Soyad', address: 'Adres', phone: '05551234567' },
+   *   merchantOkUrl: 'https://site.com/basarili',
+   *   merchantFailUrl: 'https://site.com/hata',
+   *   cardInfo: {
+   *     ccOwner: 'KART SAHİBİ',
+   *     cardNumber: '9792030394440796',
+   *     expiryMonth: '12',
+   *     expiryYear: '25',
+   *     cvv: '000'
+   *   }
+   * });
+   * 
+   * if (result.status === 'redirect') {
+   *   // 3D Secure yönlendirmesi gerekli
+   *   // result.redirectHtml'i kullanıcıya göster
+   * } else if (result.status === 'success') {
+   *   // Ödeme başarılı (non-3D)
+   * }
+   * ```
+   */
+  async processDirectPayment(
+    options: PaymentOptions & { cardInfo: CardInfo }
+  ): Promise<DirectPaymentResult> {
+    // Form verilerini hazırla
+    const payment = this.preparePayment(options);
+    
+    try {
+      // PayTR'a direkt POST yap
+      const response = await fetch(ENDPOINTS.PAYMENT_FORM, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(payment.formData),
+      });
+      
+      const responseText = await response.text();
+      
+      // Response HTML içeriyor mu kontrol et (3D yönlendirme)
+      if (responseText.includes('<html') || responseText.includes('<form')) {
+        return {
+          status: 'redirect',
+          redirectHtml: responseText,
+          rawResponse: responseText,
+        };
+      }
+      
+      // JSON response parse et
+      try {
+        const jsonResponse = JSON.parse(responseText);
+        
+        if (jsonResponse.status === 'success') {
+          return {
+            status: 'success',
+            paymentCompleted: true,
+            rawResponse: responseText,
+          };
+        }
+        
+        return {
+          status: 'error',
+          errMsg: jsonResponse.err_msg || jsonResponse.reason || 'Ödeme başarısız',
+          rawResponse: responseText,
+        };
+      } catch {
+        // JSON parse hatası - muhtemelen HTML response
+        return {
+          status: 'redirect',
+          redirectHtml: responseText,
+          rawResponse: responseText,
+        };
+      }
+    } catch (error) {
+      return {
+        status: 'error',
+        errMsg: error instanceof Error ? error.message : 'Bilinmeyen hata',
+      };
+    }
+  }
 }
 
 // Export types
 export * from './types';
 export { ENDPOINTS, DEFAULTS } from './constants';
+

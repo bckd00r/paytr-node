@@ -59,6 +59,49 @@ const payment = paytr.preparePayment({
 // payment.token      -> PayTR token
 ```
 
+### Direct API (Server-Side Ödeme)
+
+⚠️ **DİKKAT:** Bu yöntem PCI-DSS uyumluluğu gerektirir!
+
+```typescript
+// Kart bilgileri ile server-side ödeme
+const result = await paytr.processDirectPayment({
+  merchantOid: `ORDER-${Date.now()}`,
+  email: 'musteri@example.com',
+  paymentAmount: 100.99,
+  currency: 'TL',
+  basketItems: [{ name: 'Ürün', price: 100.99, quantity: 1 }],
+  user: { 
+    name: 'Müşteri Adı', 
+    address: 'Müşteri Adresi', 
+    phone: '05551234567' 
+  },
+  merchantOkUrl: 'https://site.com/odeme/basarili',
+  merchantFailUrl: 'https://site.com/odeme/hata',
+  cardInfo: {
+    ccOwner: 'KART SAHİBİ ADI',
+    cardNumber: '9792030394440796',
+    expiryMonth: '12',
+    expiryYear: '25',
+    cvv: '000'
+  }
+});
+
+if (result.status === 'redirect') {
+  // 3D Secure yönlendirmesi - HTML'i kullanıcıya göster
+  return new Response(result.redirectHtml, { 
+    headers: { 'Content-Type': 'text/html' } 
+  });
+} else if (result.status === 'success') {
+  // Ödeme başarılı (non-3D)
+  console.log('Ödeme tamamlandı!');
+} else {
+  // Hata
+  console.error('Hata:', result.errMsg);
+}
+```
+
+
 ### Ödeme Callback Doğrulama
 
 ```typescript

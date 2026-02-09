@@ -1,13 +1,20 @@
 {
     "name": "paytr.js",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "description": "PayTR Payment Gateway - Modular Node.js/TypeScript SDK",
     "main": "./dist/index.js",
+    "module": "./dist/esm/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "require": "./dist/index.js",
-            "types": "./dist/index.d.ts"
+            "import": {
+                "types": "./dist/esm/index.d.ts",
+                "default": "./dist/esm/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            }
         }
     },
     "files": [
@@ -15,7 +22,9 @@
         "README.md"
     ],
     "scripts": {
-        "build": "tsc",
+        "build": "npm run build:cjs && npm run build:esm",
+        "build:cjs": "tsc -p tsconfig.json",
+        "build:esm": "tsc -p tsconfig.esm.json",
         "clean": "rm -rf dist",
         "prepublishOnly": "npm run clean && npm run build"
     },
@@ -28,15 +37,22 @@
         "odeme",
         "kredi-karti",
         "credit-card",
-        "3d-secure"
+        "3d-secure",
+        "nextjs",
+        "nuxtjs"
     ],
-    "author": "",
+    "author": "bckd00r",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/bckd00r/paytr-node.git"
+    },
+    "homepage": "https://github.com/bckd00r/paytr-node#readme",
     "engines": {
         "node": ">=18.0.0"
     },
     "devDependencies": {
-        "@types/node": "^25.1.0",
+        "@types/node": "^20.0.0",
         "typescript": "^5.3.0"
     }
 }

@@ -53,6 +53,25 @@ export interface UserInfo {
 }
 
 /**
+ * Direct API kart bilgileri
+ * 
+ * @description Server-side ödeme için kart bilgileri.
+ * ⚠️ DİKKAT: PCI-DSS uyumluluğu gerektirir!
+ */
+export interface CardInfo {
+  /** Kart sahibinin adı soyadı */
+  ccOwner: string;
+  /** Kart numarası (13-19 hane) */
+  cardNumber: string;
+  /** Son kullanma ay (01-12) */
+  expiryMonth: string;
+  /** Son kullanma yıl (2 hane, örn: 25) */
+  expiryYear: string;
+  /** CVV/CVC güvenlik kodu (3-4 hane) */
+  cvv: string;
+}
+
+/**
  * Kart markası
  */
 export type CardType = 
@@ -101,6 +120,14 @@ export interface PaymentOptions {
   cardType?: CardType;
   /** Non-3D test başarısız senaryosu (sadece test modu) */
   non3dTestFailed?: boolean;
+  /** 
+   * Direct API kart bilgileri (isteğe bağlı)
+   * 
+   * @description Server-side ödeme için kart bilgilerini doğrudan gönderir.
+   * Eğer verilmezse, form frontend'de doldurulmalıdır.
+   * ⚠️ DİKKAT: PCI-DSS uyumluluğu gerektirir!
+   */
+  cardInfo?: CardInfo;
 }
 
 /**
@@ -146,6 +173,28 @@ export interface PreparedPayment {
   /** PayTR token */
   token: string;
 }
+
+/**
+ * Direct API ödeme sonucu
+ * 
+ * @description Server-side ödeme işlemi sonucu.
+ * 3D Secure gerektiren işlemlerde redirectUrl döner.
+ */
+export interface DirectPaymentResult {
+  /** İşlem durumu */
+  status: 'success' | 'error' | 'redirect';
+  /** 3D Secure yönlendirme URL'i (3D gerektiren işlemlerde) */
+  redirectUrl?: string;
+  /** 3D Secure HTML içeriği (bazı durumlarda) */
+  redirectHtml?: string;
+  /** Doğrudan ödeme başarılı mı? (non-3D işlemlerde) */
+  paymentCompleted?: boolean;
+  /** Hata mesajı */
+  errMsg?: string;
+  /** Ham API yanıtı */
+  rawResponse?: string;
+}
+
 
 // ============================================================================
 // Callback Types
