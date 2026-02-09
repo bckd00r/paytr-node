@@ -433,3 +433,129 @@ export class PayTRError extends Error {
     this.name = 'PayTRError';
   }
 }
+
+// ============================================================================
+// Error Codes Reference
+// ============================================================================
+
+/**
+ * Ödeme Callback Hata Kodları (failed_reason_code)
+ * 
+ * PayTR'dan bildirim URL'ine dönen hata kodları
+ */
+export const CALLBACK_ERROR_CODES = {
+  /** Değişken - Açıklamayı okuyun (örn: Kart limiti/bakiyesi yetersiz) */
+  '0': 'Değişken hata - Açıklamayı okuyun',
+  /** Kimlik doğrulama yapılmadı */
+  '1': 'Kimlik Doğrulama yapılmadı. Lütfen tekrar deneyin ve işlemi tamamlayın.',
+  /** Kimlik doğrulama başarısız */
+  '2': 'Kimlik Doğrulama başarısız. Lütfen tekrar deneyin ve şifreyi doğru girin.',
+  /** Güvenlik kontrolü onay verilmedi */
+  '3': 'Güvenlik kontrolü sonrası onay verilmedi veya kontrol yapılamadı.',
+  /** Müşteri ödeme sayfasından ayrıldı */
+  '6': 'Müşteri ödeme yapmaktan vazgeçti ve ödeme sayfasından ayrıldı.',
+  /** Taksit yapılamaz */
+  '8': 'Bu karta taksit yapılamamaktadır.',
+  /** İşlem yetkisi yok */
+  '9': 'Bu kart ile işlem yetkisi bulunmamaktadır.',
+  /** 3D Secure zorunlu */
+  '10': 'Bu işlemde 3D Secure kullanılmalıdır.',
+  /** Fraud uyarısı */
+  '11': 'Güvenlik uyarısı. İşlem yapan müşterinizi kontrol edin.',
+  /** Teknik entegrasyon hatası */
+  '99': 'İşlem başarısız: Teknik entegrasyon hatası.',
+} as const;
+
+/**
+ * Transfer API Hata Kodları
+ * 
+ * Pazaryeri transfer işlemlerinde dönen hata kodları
+ */
+export const TRANSFER_ERROR_CODES = {
+  '001': 'Geçersiz istek veya mağaza aktif değil',
+  '002': 'Bu servis için yetkiniz yok (pazaryeri değil)',
+  '003': 'Geçersiz trans_id',
+  '004': 'paytr_token gönderilmedi veya geçersiz',
+  '005': 'Geçersiz merchant_oid',
+  '006': 'merchant_oid ile başarılı ödeme bulunamadı',
+  '007': 'merchant_oid bulundu ancak ödeme henüz siteye bildirilmemiş',
+  '008': 'Valör tarihi geçmeden transfer yapılamaz',
+  '009': 'trans_id benzersiz olmalıdır, bu trans_id daha önce kullanılmış',
+  '010': 'Toplam transfer tutarı kalan tutardan fazla olamaz',
+  '012': 'Platform komisyonu sıfırdan az olamaz',
+  '091': 'transfer_iban değeri IBAN doğrulamasından geçemedi',
+  '092': 'transfer_iban TR ile başlamalı, boşluk veya - içermemeli ve 26 hane olmalı',
+  '095': 'submerchant_amount sıfırdan küçük olamaz',
+  '096': 'trans_id alfanumerik olmalıdır, özel karakter içeremez',
+  '097': 'transfer_iban zorunludur',
+  '098': 'transfer_name zorunludur',
+  '099': 'total_amount sıfırdan büyük ve sayısal olmalıdır',
+  '100': 'transfer_name içerisinde ad ve soyad arasında boşluk olmalıdır',
+  '101': 'transfer_name içerisinde ad ve soyad en az 2 karakter olmalıdır',
+  '201': 'paytr_token gönderilmedi veya geçersiz',
+  '202': 'trans_id alfanumerik olmalıdır, özel karakter içeremez',
+  '203': 'trans_id benzersiz olmalıdır, bu trans_id daha önce kullanılmış',
+  '204': 'trans_info izin verilenden uzun, daha az kayıt ile tekrar deneyin',
+  '205': 'trans_info en az 2 işlem en fazla 2000 işlem içermelidir',
+  '206': 'trans_info geçerli bir JSON string değil',
+  '301': 'paytr_token gönderilmedi veya geçersiz',
+  '302': 'trans_id alfanumerik olmalıdır, özel karakter içeremez',
+  '303': 'trans_id benzersiz olmalıdır, bu trans_id daha önce kullanılmış',
+  '305': 'merchant_oids en az X işlem, en fazla Y işlem içermelidir',
+  '306': 'merchant_oids geçerli bir JSON string değil',
+  'BLK': 'İşlemde bloke mevcut, detaylı bilgi için PayTR ile iletişime geçin',
+} as const;
+
+/**
+ * İade API Hata Kodları
+ */
+export const REFUND_ERROR_CODES = {
+  '000': 'İade yapılamıyor, daha sonra tekrar deneyin (servis kilitlenmesi)',
+  '001': 'Geçersiz istek veya mağaza aktif değil',
+  '002': 'Geçersiz merchant_oid',
+  '003': 'Geçersiz return_amount',
+  '004': 'paytr_token gönderilmedi veya geçersiz',
+  '005': 'merchant_oid ile başarılı ödeme bulunamadı',
+  '007': 'merchant_oid bulundu ancak ödeme henüz siteye bildirilmemiş',
+  '008': 'Bu ödeme tipi ile iade işlemi yapılmamaktadır',
+  '009': 'Toplam iade tutarı ödeme tutarından fazla olamaz',
+  '010': 'Net bakiyeniz yetersiz',
+  '011': 'Bir yıldan eski işlemler için iade işlemi yapılamaz',
+} as const;
+
+/**
+ * Durum Sorgu API Hata Kodları
+ */
+export const ORDER_STATUS_ERROR_CODES = {
+  '001': 'Geçersiz istek veya mağaza aktif değil',
+  '002': 'Geçersiz merchant_oid',
+  '003': 'paytr_token gönderilmedi veya geçersiz',
+  '004': 'merchant_oid ile işlem bulunamadı',
+} as const;
+
+/**
+ * Tüm hata kodu tipleri
+ */
+export type CallbackErrorCode = keyof typeof CALLBACK_ERROR_CODES;
+export type TransferErrorCode = keyof typeof TRANSFER_ERROR_CODES;
+export type RefundErrorCode = keyof typeof REFUND_ERROR_CODES;
+export type OrderStatusErrorCode = keyof typeof ORDER_STATUS_ERROR_CODES;
+
+/**
+ * Hata kodu açıklamasını al
+ */
+export function getErrorDescription(
+  errorCode: string,
+  errorType: 'callback' | 'transfer' | 'refund' | 'order_status' = 'callback'
+): string {
+  const errorMaps = {
+    callback: CALLBACK_ERROR_CODES,
+    transfer: TRANSFER_ERROR_CODES,
+    refund: REFUND_ERROR_CODES,
+    order_status: ORDER_STATUS_ERROR_CODES,
+  };
+  
+  const map = errorMaps[errorType];
+  return (map as Record<string, string>)[errorCode] ?? `Bilinmeyen hata kodu: ${errorCode}`;
+}
+
