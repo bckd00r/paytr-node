@@ -120,6 +120,20 @@ export interface PaymentOptions {
   cardType?: CardType;
   /** Non-3D test başarısız senaryosu (sadece test modu) */
   non3dTestFailed?: boolean;
+  /**
+   * Sync mode (senkron yanıt modu)
+   * 
+   * @description true olarak ayarlandığında, PayTR HTTP redirect yerine
+   * JSON yanıt döndürür. Bu mod Non-3D yetkisi gerektirir.
+   * 
+   * Yanıt status değerleri:
+   * - "success": Ödeme başarılı
+   * - "failed": Ödeme başarısız
+   * - "wait_callback": İşlem kontrol ediliyor, Callback beklenmeli
+   * 
+   * @default false
+   */
+  syncMode?: boolean;
   /** 
    * Direct API kart bilgileri (isteğe bağlı)
    * 
@@ -182,7 +196,7 @@ export interface PreparedPayment {
  */
 export interface DirectPaymentResult {
   /** İşlem durumu */
-  status: 'success' | 'error' | 'redirect';
+  status: 'success' | 'error' | 'redirect' | 'wait_callback';
   /** 3D Secure yönlendirme URL'i (3D gerektiren işlemlerde) */
   redirectUrl?: string;
   /** 3D Secure HTML içeriği (bazı durumlarda) */
@@ -193,6 +207,28 @@ export interface DirectPaymentResult {
   errMsg?: string;
   /** Ham API yanıtı */
   rawResponse?: string;
+}
+
+/**
+ * Sync mode yanıt tipi
+ * 
+ * @description sync_mode=1 gönderildiğinde PayTR JSON yanıt döndürür.
+ * Bu mod Non-3D yetkisi gerektirir.
+ */
+export interface SyncModeResponse {
+  /** 
+   * İşlem durumu
+   * - "success": Ödeme başarılı
+   * - "failed": Ödeme başarısız
+   * - "wait_callback": İşlem kontrol ediliyor, Callback beklenmeli
+   */
+  status: 'success' | 'failed' | 'wait_callback';
+  /** Hata mesajı (başarısız durumda) */
+  err_msg?: string;
+  /** Hata kodu */
+  err_no?: string;
+  /** Sipariş numarası */
+  merchant_oid?: string;
 }
 
 

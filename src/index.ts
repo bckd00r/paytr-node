@@ -163,6 +163,11 @@ export class PayTR {
       formData.cvv = options.cardInfo.cvv;
     }
 
+    // Sync mode: JSON yanıt almak için (Non-3D yetkisi gerektirir)
+    if (options.syncMode) {
+      formData.sync_mode = '1';
+    }
+
     return {
       formAction: ENDPOINTS.PAYMENT_FORM,
       formData,
@@ -588,6 +593,7 @@ export class PayTR {
       try {
         const jsonResponse = JSON.parse(responseText);
         
+        // Sync mode başarılı yanıt
         if (jsonResponse.status === 'success') {
           return {
             status: 'success',
@@ -596,6 +602,15 @@ export class PayTR {
           };
         }
         
+        // Sync mode: işlem kontrol ediliyor (callback bekle)
+        if (jsonResponse.status === 'wait_callback') {
+          return {
+            status: 'wait_callback',
+            rawResponse: responseText,
+          };
+        }
+        
+        // Sync mode veya standart hata
         return {
           status: 'error',
           errMsg: jsonResponse.err_msg || jsonResponse.reason || 'Ödeme başarısız',
